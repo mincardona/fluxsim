@@ -66,7 +66,7 @@ def handle_pygame_events():
 
 # game state
 def update_world(state):
-    old_particles = copy.deepcopy(state.particle_map)
+    old_particles = copy.copy(state.particle_map)
     new_particles = {}
 
     def loc_empty(loc):
