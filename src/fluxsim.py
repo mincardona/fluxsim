@@ -13,17 +13,22 @@ sand = (204, 204, 0)
 
 st_font = None
 
+def swap_kv(dc):
+    outval = {}
+    for k, v in dc.items():
+        outval[v] = k
+    return outval
+
 class FluxState:
     EMPTY_PARTICLE = 0
     STATIC_PARTICLE = 1
     HEAVY_PARTICLE = 2
     FLOATY_PARTICLE = 3
 
-    def __init__(self, width, height, timescale):
+    def __init__(self, width, height):
         self.width = width
         self.height = height
         self.particle_map = {}
-        self.timescale = timescale
 
     # loc is an x, y tuple
     def add_particle(self, type, loc):
@@ -56,6 +61,14 @@ class FluxState:
     def assert_loc(self, loc):
         assert self.check_loc(loc), "loc {} out of bounds".format(loc)
 
+particle_colors = {
+    FluxState.EMPTY_PARTICLE : black,
+    FluxState.STATIC_PARTICLE : white,
+    FluxState.HEAVY_PARTICLE : sand,
+    FluxState.FLOATY_PARTICLE : red
+}
+
+particle_colors_by_color = swap_kv(particle_colors)
 
 # return False to quit
 def handle_pygame_events():
@@ -107,17 +120,10 @@ def update_world(state):
     return
 
 def render(state, flux_display, fps):
-    particle_colors = {
-        FluxState.EMPTY_PARTICLE : black,
-        FluxState.STATIC_PARTICLE : white,
-        FluxState.HEAVY_PARTICLE : sand,
-        FluxState.FLOATY_PARTICLE : red
-    }
-
     flux_display.fill(black)
 
     for loc, particle in state.particle_map.items():
-        pygame.draw.rect(flux_display, particle_colors[particle], [loc[0], loc[1], 1, 1])
+        flux_display.set_at((loc[0], loc[1]), particle_colors[particle])
 
     fps_str = "%.1f" % fps
     fps_surface = st_font.render(fps_str, True, white)
@@ -141,7 +147,7 @@ if __name__ == "__main__":
 
     master_clock = pygame.time.Clock()
 
-    state = FluxState(display_width, display_height, 1)
+    state = FluxState(display_width, display_height)
 
     state.add_particle_rect(FluxState.HEAVY_PARTICLE, (50, 0), 50, 50)
     state.add_particle_rect(FluxState.STATIC_PARTICLE, (60, 100), 25, 3)
