@@ -66,7 +66,9 @@ def update_world(state):
     new_particles = {}
 
     def loc_empty(loc):
-        return not ((loc in old_particles) or (loc in new_particles))
+        valid = state.check_loc(loc)
+        not_exist = not ((loc in old_particles) or (loc in new_particles))
+        return valid and not_exist
 
     def move_particle(loc, loc2):
         new_particles[loc2] = old_particles[loc]
@@ -76,7 +78,7 @@ def update_world(state):
         new_loc = ogloc
 
         if ptype == FluxState.STATIC_PARTICLE:
-            move_particle(ogloc, newloc)
+            move_particle(ogloc, new_loc)
         else:
             leftright = random.randint(-1, 1)
 
@@ -129,10 +131,11 @@ if __name__ == "__main__":
 
     state = FluxState(display_width, display_height, 1)
 
-    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (0, 0), 100, 3)
+    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (100, 0), 100, 3)
+    state.add_particle_rect(FluxState.STATIC_PARTICLE, (125, 200), 50, 3)
 
     while handle_pygame_events():
         render(state, flux_display)
         pygame.display.update()
-        master_clock.tick(10)
+        master_clock.tick(20)
         update_world(state)
