@@ -1,5 +1,12 @@
 import pygame
+import random
+import copy
 
+black = (0, 0, 0)
+white = (255, 255, 255)
+red = (155, 0, 0)
+green = (0, 255, 0)
+blue = (0, 0, 255)
 
 class FluxState:
     EMPTY_PARTICLE = 0
@@ -20,6 +27,12 @@ class FluxState:
             self.particle_map.pop(loc)
         else:
             self.particle_map[loc] = type
+
+    def add_particle_rect(self, ptype, corner, width, height):
+        for x in range(corner[0], corner[0] + width):
+            for y in range(corner[1], corner[1] + height):
+                if self.check_loc((x, y)):
+                    self.add_particle(ptype, (x, y))
 
     def remove_particle(self, loc):
         self.assert_loc(loc)
@@ -46,19 +59,58 @@ def handle_pygame_events():
             return False
     return True
 
-# game state and microseconds elapsed
-def update_world(state, us):
+# game state
+def update_world(state):
+
+    old_particles = copy.deepcopy(state.particle_map)
+    new_particles = {}
+
+    def loc_empty(loc):
+        return not ((loc in old_particles) or (loc in new_particles))
+
+    def move_particle(loc, loc2):
+        new_particles[loc2] = old_particles[loc]
+        old_particles.pop(loc)
+
+    for ogloc, ptype in state.particle_map.items():
+        new_loc = ogloc
+
+        if ptype == FluxState.STATIC_PARTICLE:
+            move_particle(ogloc, newloc)
+        else:
+            leftright = random.randint(-1, 1)
+
+            above_loc = (ogloc[0], ogloc[1] - 1)
+            below_loc = (ogloc[0], ogloc[1] + 1)
+
+            if ptype == FluxState.HEAVY_PARTICLE and loc_empty(below_loc):
+                new_loc = below_loc
+            elif ptype == FluxState.FLOATY_PARTICLE and loc_empty(above_loc):
+                new_loc = above_loc
+
+            left_loc = (new_loc[0] - 1, new_loc[1])
+            right_loc = (new_loc[0] + 1, new_loc[1])
+
+            if leftright == -1 and loc_empty(left_loc):
+                new_loc = left_loc
+            elif leftright == 1 and loc_empty(right_loc):
+                new_loc = right_loc
+
+            move_particle(ogloc, new_loc)
+
+    state.particle_map = new_particles
+
     return
 
 def render(state, flux_display):
     particle_colors = {
-        FluxState.EMPTY_PARTICLE : (255, 255, 255),
-        FluxState.STATIC_PARTICLE : (0, 0, 0),
-        FluxState.HEAVY_PARTICLE : (0, 255, 0),
-        FluxState.FLOATY_PARTICLE : (255, 0, 0)
+        FluxState.EMPTY_PARTICLE : black,
+        FluxState.STATIC_PARTICLE : white,
+        FluxState.HEAVY_PARTICLE : blue,
+        FluxState.FLOATY_PARTICLE : red
     }
 
-    flux_display.fill((255, 255, 255))
+    flux_display.fill(black)
 
     for loc, particle in state.particle_map.items():
         pygame.draw.rect(flux_display, particle_colors[particle], [loc[0], loc[1], 1, 1])
@@ -76,11 +128,11 @@ if __name__ == "__main__":
     master_clock = pygame.time.Clock()
 
     state = FluxState(display_width, display_height, 1)
-    state.add_particle(3, (0, 0))
-    state.add_particle(3, (5, 5))
+
+    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (0, 0), 100, 3)
 
     while handle_pygame_events():
-        update_world(state, 1000000/60)
         render(state, flux_display)
         pygame.display.update()
-        master_clock.tick(60)
+        master_clock.tick(10)
+        update_world(state)
