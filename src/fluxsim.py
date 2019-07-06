@@ -7,6 +7,7 @@ white = (255, 255, 255)
 red = (155, 0, 0)
 green = (0, 255, 0)
 blue = (0, 0, 255)
+sand = (204, 204, 0)
 
 class FluxState:
     EMPTY_PARTICLE = 0
@@ -108,7 +109,7 @@ def render(state, flux_display):
     particle_colors = {
         FluxState.EMPTY_PARTICLE : black,
         FluxState.STATIC_PARTICLE : white,
-        FluxState.HEAVY_PARTICLE : blue,
+        FluxState.HEAVY_PARTICLE : sand,
         FluxState.FLOATY_PARTICLE : red
     }
 
@@ -131,11 +132,12 @@ if __name__ == "__main__":
 
     state = FluxState(display_width, display_height, 1)
 
-    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (100, 0), 100, 3)
+    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (100, 0), 100, 50)
     state.add_particle_rect(FluxState.STATIC_PARTICLE, (125, 200), 50, 3)
+    state.add_particle_rect(FluxState.FLOATY_PARTICLE, (100, 300), 100, 50)
 
     while handle_pygame_events():
         render(state, flux_display)
         pygame.display.update()
-        master_clock.tick(20)
+        master_clock.tick(60)
         update_world(state)
