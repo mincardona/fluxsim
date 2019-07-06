@@ -15,21 +15,21 @@ class FluxState:
 
     # loc is an x, y tuple
     def add_particle(self, type, loc):
-        assert_loc(loc)
-        if type == EMPTY_PARTICLE and (loc in self.particle_map):
+        self.assert_loc(loc)
+        if type == self.EMPTY_PARTICLE and (loc in self.particle_map):
             self.particle_map.pop(loc)
         else:
             self.particle_map[loc] = type
 
     def remove_particle(self, loc):
-        assert_loc(loc)
-        old = self.particle_map.get(loc, EMPTY_PARTICLE)
-        self.add_particle(EMPTY_PARTICLE, loc)
+        self.assert_loc(loc)
+        old = self.particle_map.get(loc, self.EMPTY_PARTICLE)
+        self.add_particle(self.EMPTY_PARTICLE, loc)
         return old
 
     def move_particle(self, src, dst):
-        assert_loc(src)
-        assert_loc(dst)
+        self.assert_loc(src)
+        self.assert_loc(dst)
         add_particle(remove_particle(src), dst)
 
     def check_loc(self, loc):
@@ -50,6 +50,21 @@ def handle_pygame_events():
 def update_world(state, us):
     return
 
+def render(state, flux_display):
+    particle_colors = {
+        FluxState.EMPTY_PARTICLE : (255, 255, 255),
+        FluxState.STATIC_PARTICLE : (0, 0, 0),
+        FluxState.HEAVY_PARTICLE : (0, 255, 0),
+        FluxState.FLOATY_PARTICLE : (255, 0, 0)
+    }
+
+    flux_display.fill((255, 255, 255))
+
+    for loc, particle in state.particle_map.items():
+        pygame.draw.rect(flux_display, particle_colors[particle], [loc[0], loc[1], 1, 1])
+
+    return
+
 if __name__ == "__main__":
     pygame.init()
     display_width = 640
@@ -61,8 +76,11 @@ if __name__ == "__main__":
     master_clock = pygame.time.Clock()
 
     state = FluxState(display_width, display_height, 1)
+    state.add_particle(3, (0, 0))
+    state.add_particle(3, (5, 5))
 
     while handle_pygame_events():
         update_world(state, 1000000/60)
+        render(state, flux_display)
         pygame.display.update()
         master_clock.tick(60)
