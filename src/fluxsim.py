@@ -81,9 +81,7 @@ def update_world(state):
     for ogloc, ptype in state.particle_map.items():
         new_loc = ogloc
 
-        if ptype == FluxState.STATIC_PARTICLE:
-            move_particle(ogloc, new_loc)
-        else:
+        if ptype != FluxState.STATIC_PARTICLE:
             leftright = random.randint(-1, 1)
 
             above_loc = (ogloc[0], ogloc[1] - 1)
@@ -102,7 +100,7 @@ def update_world(state):
             elif leftright == 1 and loc_empty(right_loc):
                 new_loc = right_loc
 
-            move_particle(ogloc, new_loc)
+        move_particle(ogloc, new_loc)
 
     state.particle_map = new_particles
 
@@ -133,8 +131,8 @@ def render(state, flux_display, fps):
 
 if __name__ == "__main__":
     pygame.init()
-    display_width = 640
-    display_height = 480
+    display_width = 200
+    display_height = 200
 
     flux_display = pygame.display.set_mode((display_width, display_height))
     pygame.display.set_caption('FluxSim')
@@ -145,9 +143,9 @@ if __name__ == "__main__":
 
     state = FluxState(display_width, display_height, 1)
 
-    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (100, 0), 100, 50)
-    state.add_particle_rect(FluxState.STATIC_PARTICLE, (125, 200), 50, 3)
-    state.add_particle_rect(FluxState.FLOATY_PARTICLE, (100, 300), 100, 50)
+    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (50, 0), 50, 50)
+    state.add_particle_rect(FluxState.STATIC_PARTICLE, (60, 100), 25, 3)
+    #state.add_particle_rect(FluxState.FLOATY_PARTICLE, (50, 150), 50, 50)
 
     while handle_pygame_events():
         render(state, flux_display, master_clock.get_fps())
