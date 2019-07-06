@@ -11,6 +11,8 @@ green = (0, 255, 0)
 blue = (0, 0, 255)
 sand = (204, 204, 0)
 
+st_font = None
+
 class FluxState:
     EMPTY_PARTICLE = 0
     STATIC_PARTICLE = 1
@@ -64,7 +66,6 @@ def handle_pygame_events():
 
 # game state
 def update_world(state):
-
     old_particles = copy.deepcopy(state.particle_map)
     new_particles = {}
 
@@ -107,7 +108,7 @@ def update_world(state):
 
     return
 
-def render(state, flux_display):
+def render(state, flux_display, fps):
     particle_colors = {
         FluxState.EMPTY_PARTICLE : black,
         FluxState.STATIC_PARTICLE : white,
@@ -120,6 +121,14 @@ def render(state, flux_display):
     for loc, particle in state.particle_map.items():
         pygame.draw.rect(flux_display, particle_colors[particle], [loc[0], loc[1], 1, 1])
 
+    fps_str = "%.1f" % fps
+    fps_surface = st_font.render(fps_str, True, white)
+    fps_rect = fps_surface.get_rect()
+    fps_rect.bottom = state.height - 1
+    fps_rect.left = 0
+
+    flux_display.blit(fps_surface, fps_rect)
+
     return
 
 if __name__ == "__main__":
@@ -130,6 +139,8 @@ if __name__ == "__main__":
     flux_display = pygame.display.set_mode((display_width, display_height))
     pygame.display.set_caption('FluxSim')
 
+    st_font = pygame.font.Font(None, 16)
+
     master_clock = pygame.time.Clock()
 
     state = FluxState(display_width, display_height, 1)
@@ -139,7 +150,7 @@ if __name__ == "__main__":
     state.add_particle_rect(FluxState.FLOATY_PARTICLE, (100, 300), 100, 50)
 
     while handle_pygame_events():
-        render(state, flux_display)
+        render(state, flux_display, master_clock.get_fps())
         pygame.display.update()
         master_clock.tick(60)
         update_world(state)
