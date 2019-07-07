@@ -4,6 +4,10 @@ import pygame
 import random
 import copy
 import sys
+from io import BytesIO
+from PIL import Image
+from PIL import ImageDraw
+import imageio
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -133,6 +137,8 @@ def update_world(state):
     return
 
 def render(state, flux_display, fps):
+    flux_display.lock()
+
     flux_display.fill(black)
 
     for loc, particle in state.particle_map.items():
@@ -144,12 +150,21 @@ def render(state, flux_display, fps):
     fps_rect.bottom = state.height - 1
     fps_rect.left = 0
 
+    flux_display.unlock()
+
     flux_display.blit(fps_surface, fps_rect)
 
-    return
+def prerender(state, img):
+    # fill black
+    img.paste(black, (0, 0, img.size[0], img.size[1]))
+    draw = ImageDraw.Draw(img)
+    for loc, particle in state.particle_map.items():
+        draw.point([(loc[0], loc[1])], FluxState.particle_colors[particle])
 
 if __name__ == "__main__":
     pygame.init()
+
+    mode_prerender = True
 
     if len(sys.argv) == 1:
         state = FluxState(200, 200)
@@ -161,15 +176,31 @@ if __name__ == "__main__":
     else:
         raise RuntimeError("Bad argument count (got {})".format(len(sys.argv)-1))
 
-    flux_display = pygame.display.set_mode((state.width, state.height))
-    pygame.display.set_caption('FluxSim')
+    if mode_prerender:
+        render_target = Image.new("RGB", (state.width, state.height), black)
+        with imageio.get_writer("./out.gif", mode="I", duration=1/60) as iwriter:
+            for i in range(0, 600):
+                # render image
+                prerender(state, render_target)
+                # write image data to writer
+                with BytesIO() as fake_file:
+                    render_target.save(fake_file, format="BMP")
+                    fake_file.seek(0)
+                    ioimage = imageio.imread(fake_file, "BMP")
+                    iwriter.append_data(ioimage)
+                # update world
+                update_world(state)
 
-    st_font = pygame.font.Font(None, 16)
+    else:
+        flux_display = pygame.display.set_mode((state.width, state.height))
+        pygame.display.set_caption('FluxSim')
 
-    master_clock = pygame.time.Clock()
+        st_font = pygame.font.Font(None, 16)
 
-    while handle_pygame_events():
-        render(state, flux_display, master_clock.get_fps())
-        pygame.display.update()
-        master_clock.tick(1000)
-        update_world(state)
+        master_clock = pygame.time.Clock()
+
+        while handle_pygame_events():
+            render(state, flux_display, master_clock.get_fps())
+            pygame.display.update()
+            master_clock.tick(1000)
+            update_world(state)
