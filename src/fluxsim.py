@@ -3,6 +3,7 @@
 import pygame
 import random
 import copy
+import sys
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -25,16 +26,38 @@ class FluxState:
     HEAVY_PARTICLE = 2
     FLOATY_PARTICLE = 3
 
+    particle_colors = {
+        EMPTY_PARTICLE : black,
+        STATIC_PARTICLE : white,
+        HEAVY_PARTICLE : sand,
+        FLOATY_PARTICLE : red
+    }
+
+    particle_colors_by_color = swap_kv(particle_colors)
+
     def __init__(self, width, height):
         self.width = width
         self.height = height
         self.particle_map = {}
 
+    def from_surface(surf):
+        (surf_w, surf_h) = surf.get_size()
+        state = FluxState(surf_w, surf_h)
+        for x in range(0, surf_w):
+            for y in range(0, surf_h):
+                # get (r, g, b) at this x, y location
+                pixel_color = tuple(surf.get_at((x, y)))[0:3]
+                if pixel_color in FluxState.particle_colors_by_color:
+                    type = FluxState.particle_colors_by_color[pixel_color]
+                    state.add_particle(type, (x, y))
+        return state
+
     # loc is an x, y tuple
     def add_particle(self, type, loc):
         self.assert_loc(loc)
-        if type == self.EMPTY_PARTICLE and (loc in self.particle_map):
-            self.particle_map.pop(loc)
+        if type == self.EMPTY_PARTICLE:
+            if loc in self.particle_map:
+                self.particle_map.pop(loc)
         else:
             self.particle_map[loc] = type
 
@@ -61,14 +84,7 @@ class FluxState:
     def assert_loc(self, loc):
         assert self.check_loc(loc), "loc {} out of bounds".format(loc)
 
-particle_colors = {
-    FluxState.EMPTY_PARTICLE : black,
-    FluxState.STATIC_PARTICLE : white,
-    FluxState.HEAVY_PARTICLE : sand,
-    FluxState.FLOATY_PARTICLE : red
-}
 
-particle_colors_by_color = swap_kv(particle_colors)
 
 # return False to quit
 def handle_pygame_events():
@@ -123,7 +139,7 @@ def render(state, flux_display, fps):
     flux_display.fill(black)
 
     for loc, particle in state.particle_map.items():
-        flux_display.set_at((loc[0], loc[1]), particle_colors[particle])
+        flux_display.set_at((loc[0], loc[1]), FluxState.particle_colors[particle])
 
     fps_str = "%.1f" % fps
     fps_surface = st_font.render(fps_str, True, white)
@@ -137,21 +153,23 @@ def render(state, flux_display, fps):
 
 if __name__ == "__main__":
     pygame.init()
-    display_width = 200
-    display_height = 200
 
-    flux_display = pygame.display.set_mode((display_width, display_height))
+    if len(sys.argv) == 1:
+        state = FluxState(200, 200)
+        state.add_particle_rect(FluxState.HEAVY_PARTICLE, (50, 0), 50, 50)
+        state.add_particle_rect(FluxState.STATIC_PARTICLE, (60, 100), 25, 3)
+        #state.add_particle_rect(FluxState.FLOATY_PARTICLE, (50, 150), 50, 50)
+    elif len(sys.argv) == 2:
+        state = FluxState.from_surface(pygame.image.load(sys.argv[1]))
+    else:
+        raise RuntimeError("Bad argument count (got {})".format(len(sys.argv)-1))
+
+    flux_display = pygame.display.set_mode((state.width, state.height))
     pygame.display.set_caption('FluxSim')
 
     st_font = pygame.font.Font(None, 16)
 
     master_clock = pygame.time.Clock()
-
-    state = FluxState(display_width, display_height)
-
-    state.add_particle_rect(FluxState.HEAVY_PARTICLE, (50, 0), 50, 50)
-    state.add_particle_rect(FluxState.STATIC_PARTICLE, (60, 100), 25, 3)
-    #state.add_particle_rect(FluxState.FLOATY_PARTICLE, (50, 150), 50, 50)
 
     while handle_pygame_events():
         render(state, flux_display, master_clock.get_fps())
