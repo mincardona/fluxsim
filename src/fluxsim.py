@@ -95,19 +95,15 @@ def handle_pygame_events():
 
 # game state
 def update_world(state):
-    old_particles = copy.copy(state.particle_map)
     new_particles = {}
 
     def loc_empty(loc):
-        valid = state.check_loc(loc)
-        not_exist = not ((loc in old_particles) or (loc in new_particles))
-        return valid and not_exist
+        return state.check_loc(loc) and not ((loc in state.particle_map) or (loc in new_particles))
 
-    def move_particle(loc, loc2):
-        new_particles[loc2] = old_particles[loc]
-        old_particles.pop(loc)
+    klist = list(state.particle_map.keys())
 
-    for ogloc, ptype in state.particle_map.items():
+    for ogloc in klist:
+        ptype = state.particle_map[ogloc]
         new_loc = ogloc
 
         if ptype != FluxState.STATIC_PARTICLE:
@@ -129,7 +125,8 @@ def update_world(state):
             elif leftright == 1 and loc_empty(right_loc):
                 new_loc = right_loc
 
-        move_particle(ogloc, new_loc)
+        new_particles[new_loc] = state.particle_map[ogloc]
+        state.particle_map.pop(ogloc)
 
     state.particle_map = new_particles
 
@@ -174,5 +171,5 @@ if __name__ == "__main__":
     while handle_pygame_events():
         render(state, flux_display, master_clock.get_fps())
         pygame.display.update()
-        master_clock.tick(60)
+        master_clock.tick(1000)
         update_world(state)
