@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import os
+# suppresses pygame output when importing
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame
 import random
 import copy
@@ -8,6 +11,7 @@ from io import BytesIO
 from PIL import Image
 from PIL import ImageDraw
 import imageio
+import argparse
 
 black = (0, 0, 0)
 white = (255, 255, 255)
@@ -161,24 +165,32 @@ def prerender(state, img):
     for loc, particle in state.particle_map.items():
         draw.point([(loc[0], loc[1])], FluxState.particle_colors[particle])
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Simulate particles")
+    parser.add_argument("-p", "--prerender", action="store_true", help="prerender the scene")
+    parser.add_argument("-i", "--image", default="", help="image to use for initialization")
+    parser.add_argument("-o", "--output-image", default="./fluxsim_out.gif", help="filename of prerendered output GIF")
+
+    return parser.parse_args()
+
 if __name__ == "__main__":
+    args = parse_args()
+
     pygame.init()
 
     mode_prerender = True
 
-    if len(sys.argv) == 1:
+    if args.image == "":
         state = FluxState(200, 200)
         state.add_particle_rect(FluxState.HEAVY_PARTICLE, (50, 0), 50, 50)
         state.add_particle_rect(FluxState.STATIC_PARTICLE, (60, 100), 25, 3)
         #state.add_particle_rect(FluxState.FLOATY_PARTICLE, (50, 150), 50, 50)
-    elif len(sys.argv) == 2:
-        state = FluxState.from_surface(pygame.image.load(sys.argv[1]))
     else:
-        raise RuntimeError("Bad argument count (got {})".format(len(sys.argv)-1))
+        state = FluxState.from_surface(pygame.image.load(args.image))
 
-    if mode_prerender:
+    if args.prerender:
         render_target = Image.new("RGB", (state.width, state.height), black)
-        with imageio.get_writer("./out.gif", mode="I", duration=1/60) as iwriter:
+        with imageio.get_writer(args.output_image, mode="I", duration=1/60) as iwriter:
             for i in range(0, 600):
                 # render image
                 prerender(state, render_target)
@@ -202,5 +214,5 @@ if __name__ == "__main__":
         while handle_pygame_events():
             render(state, flux_display, master_clock.get_fps())
             pygame.display.update()
-            master_clock.tick(1000)
+            master_clock.tick(60)
             update_world(state)
