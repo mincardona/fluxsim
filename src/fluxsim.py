@@ -169,14 +169,13 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Simulate particles")
     parser.add_argument("-p", "--prerender", action="store_true", help="prerender the scene")
     parser.add_argument("-i", "--image", default="", help="image to use for initialization")
-    parser.add_argument("-o", "--output-image", default="./fluxsim_out.gif", help="filename of prerendered output GIF")
+    parser.add_argument("-o", "--output-image", default="./fluxsim_out.gif", \
+        help="filename of prerendered output GIF")
 
     return parser.parse_args()
 
 if __name__ == "__main__":
     args = parse_args()
-
-    pygame.init()
 
     mode_prerender = True
 
@@ -204,6 +203,8 @@ if __name__ == "__main__":
                 update_world(state)
 
     else:
+        pygame.init()
+
         flux_display = pygame.display.set_mode((state.width, state.height))
         pygame.display.set_caption('FluxSim')
 
